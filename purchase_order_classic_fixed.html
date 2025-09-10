@@ -177,55 +177,110 @@
 
 <script>
 const $ = id => document.getElementById(id);
-let logoData=null;
+let logoData = null;
 
-function init(){
-  $("poDate").value=fmtDate(new Date());
-  $("poNumber").value=nextPONumber();
-  addItem(); addItem();
-  bind(); recalc();
+function init() {
+  $("poDate").value = fmtDate(new Date());
+  $("poNumber").value = nextPONumber();
+  addItem();
+  addItem();
+  bind();
+  recalc();
 }
-function fmtDate(d){return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();}
-function poCounterKey(){return "sixtiq_po_"+new Date().getFullYear();}
-function nextPONumber(){const k=poCounterKey();let n=parseInt(localStorage.getItem(k)||"0",10)+1;localStorage.setItem(k,n);return "PO-"+new Date().getFullYear()+"-"+String(n).padStart(4,"0");}
 
-function addItem(){const tr=document.createElement("tr");tr.className="item-row";tr.innerHTML=`<td><input class="idx"></td><td><input class="desc"></td><td><input class="qty" type="number" value="1"></td><td><input class="price" type="number" value="0"></td><td><span class="amount">0.00</span><button class="del">🗑️</button></td>`;$("itemsBody").appendChild(tr);tr.querySelectorAll("input").forEach(i=>i.addEventListener("input",()=>updateRow(tr)));tr.querySelector(".del").addEventListener("click",()=>{tr.r...
-function updateRow(row){const q=parseFloat(row.querySelector(".qty").value)||0;const p=parseFloat(row.querySelector(".price").value)||0;const symbol=$("currency").value||"₦";row.querySelector(".amount").textContent=symbol+(q*p).toFixed(2);recalc();}
+function fmtDate(d) {
+  return String(d.getDate()).padStart(2, "0") + "/" +
+         String(d.getMonth() + 1).padStart(2, "0") + "/" +
+         d.getFullYear();
+}
 
-function recalc(){
+function poCounterKey() {
+  return "sixtiq_po_" + new Date().getFullYear();
+}
+
+function nextPONumber() {
+  const k = poCounterKey();
+  let n = parseInt(localStorage.getItem(k) || "0", 10) + 1;
+  localStorage.setItem(k, n);
+  return "PO-" + new Date().getFullYear() + "-" + String(n).padStart(4, "0");
+}
+
+function addItem() {
+  const tr = document.createElement("tr");
+  tr.className = "item-row";
+  tr.innerHTML = `
+    <td><input class="idx"></td>
+    <td><input class="desc"></td>
+    <td><input class="qty" type="number" value="1"></td>
+    <td><input class="price" type="number" value="0"></td>
+    <td>
+      <span class="amount">0.00</span>
+      <button class="del">🗑️</button>
+    </td>`;
+  $("itemsBody").appendChild(tr);
+  tr.querySelectorAll("input").forEach(i =>
+    i.addEventListener("input", () => updateRow(tr))
+  );
+  tr.querySelector(".del").addEventListener("click", () => {
+    tr.remove();
+    recalc();
+  });
+}
+
+function updateRow(row) {
+  const q = parseFloat(row.querySelector(".qty").value) || 0;
+  const p = parseFloat(row.querySelector(".price").value) || 0;
+  const symbol = $("currency").value || "₦";
+  row.querySelector(".amount").textContent = symbol + (q * p).toFixed(2);
+  recalc();
+}
+
+function recalc() {
   let sum = 0;
-  document.querySelectorAll('.item-row .amount').forEach(el => {
-    const v = parseFloat(el.textContent.replace(/[^0-9.-]+/g,'')) || 0;
+  document.querySelectorAll(".item-row .amount").forEach(el => {
+    const v = parseFloat(el.textContent.replace(/[^0-9.-]+/g, "")) || 0;
     sum += v;
   });
+
   const taxPercent = parseFloat(taxInput.value) || 0;
   const taxAmount = (sum * taxPercent) / 100;
   const s = parseFloat(shipInput.value) || 0;
   const o = parseFloat(otherInput.value) || 0;
   const g = sum + taxAmount + s + o;
-  const symbol = $("currency").value || '₦';
+
+  const symbol = $("currency").value || "₦";
   subTotal.textContent = symbol + sum.toFixed(2);
   grandTotal.textContent = symbol + g.toFixed(2);
 }
 
-function buildPreviewHTML(){
-  const symbol = $("currency").value||"₦";
-  let itemsHTML="";
-  document.querySelectorAll("#itemsBody tr").forEach((tr,i)=>{
-    const idx=tr.querySelector(".idx").value;
-    const desc=tr.querySelector(".desc").value;
-    const qty=tr.querySelector(".qty").value;
-    const price=tr.querySelector(".price").value;
-    const amount=tr.querySelector(".amount").textContent;
-    itemsHTML+=`<tr><td>${idx}</td><td>${desc}</td><td>${qty}</td><td>${symbol}${parseFloat(price||0).toFixed(2)}</td><td style="text-align:right">${amount}</td></tr>`;
+function buildPreviewHTML() {
+  const symbol = $("currency").value || "₦";
+  let itemsHTML = "";
+  document.querySelectorAll("#itemsBody tr").forEach((tr, i) => {
+    const idx = tr.querySelector(".idx").value;
+    const desc = tr.querySelector(".desc").value;
+    const qty = tr.querySelector(".qty").value;
+    const price = tr.querySelector(".price").value;
+    const amount = tr.querySelector(".amount").textContent;
+    itemsHTML += `<tr>
+      <td>${idx}</td>
+      <td>${desc}</td>
+      <td>${qty}</td>
+      <td>${symbol}${parseFloat(price || 0).toFixed(2)}</td>
+      <td style="text-align:right">${amount}</td>
+    </tr>`;
   });
 
   return `
   <div style="font-family:Open Sans;padding:20px;max-width:800px;margin:auto;color:#111">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:4px solid #550000;padding-bottom:10px;margin-bottom:10px">
       <div>
-        ${logoData?`<img src="${logoData}" style="max-height:60px">`:"<div style='border:1px dashed #aaa;width:120px;height:60px;display:flex;align-items:center;justify-content:center'>Logo</div>"}
-        <div style="font-weight:800;font-size:16px;margin-top:6px">${$("companyName").textContent}</div>
+        ${logoData
+          ? `<img src="${logoData}" style="max-height:60px">`
+          : "<div style='border:1px dashed #aaa;width:120px;height:60px;display:flex;align-items:center;justify-content:center'>Logo</div>"}
+        <div style="font-weight:800;font-size:16px;margin-top:6px">
+          ${$("companyName").textContent}
+        </div>
       </div>
       <div style="text-align:right">
         <div style="font-size:24px;font-weight:900;color:#e60000">PURCHASE ORDER</div>
@@ -249,7 +304,11 @@ function buildPreviewHTML(){
       </div>
     </div>
     <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
-      <thead><tr style="background:#550000;color:#fff"><th>ITEM #</th><th>DESCRIPTION</th><th>QTY</th><th>UNIT PRICE</th><th style="text-align:right">TOTAL</th></tr></thead>
+      <thead>
+        <tr style="background:#550000;color:#fff">
+          <th>ITEM #</th><th>DESCRIPTION</th><th>QTY</th><th>UNIT PRICE</th><th style="text-align:right">TOTAL</th>
+        </tr>
+      </thead>
       <tbody>${itemsHTML}</tbody>
     </table>
     <div style="display:flex;gap:20px">
@@ -259,32 +318,49 @@ function buildPreviewHTML(){
       </div>
       <div style="width:220px;border:1px solid #ddd;padding:8px">
         <div>Subtotal: ${$("subTotal").textContent}</div>
-        <div>Tax (${taxInput.value||0}%): ${symbol}${((parseFloat(taxInput.value)||0)* (parseFloat($("subTotal").textContent.replace(/[^0-9.-]/g,''))||0)/100).toFixed(2)}</div>
-        <div>Shipping: ${symbol}${(parseFloat(shipInput.value)||0).toFixed(2)}</div>
-        <div>Other: ${symbol}${(parseFloat(otherInput.value)||0).toFixed(2)}</div>
-        <div style="background:#550000;color:#fff;font-weight:800;padding:6px;margin-top:6px">Grand Total: ${$("grandTotal").textContent}</div>
+        <div>Tax (${taxInput.value || 0}%): ${symbol}${((parseFloat(taxInput.value) || 0) * (parseFloat($("subTotal").textContent.replace(/[^0-9.-]/g, "")) || 0) / 100).toFixed(2)}</div>
+        <div>Shipping: ${symbol}${(parseFloat(shipInput.value) || 0).toFixed(2)}</div>
+        <div>Other: ${symbol}${(parseFloat(otherInput.value) || 0).toFixed(2)}</div>
+        <div style="background:#550000;color:#fff;font-weight:800;padding:6px;margin-top:6px">
+          Grand Total: ${$("grandTotal").textContent}
+        </div>
       </div>
     </div>
     <div style="margin-top:20px;text-align:center;font-weight:700;color:#550000">Powered by Sixtiq</div>
   </div>`;
 }
 
-function openPreview(){$("modalBody").innerHTML=buildPreviewHTML();$("overlay").style.display="flex";}
+function openPreview() {
+  $("modalBody").innerHTML = buildPreviewHTML();
+  $("overlay").style.display = "flex";
+}
 
-async function onSendOption(e){const act=e.target.dataset.action;$("sendMenu").style.display="none";if(act==="download"){await exportPDF();showSuccess("Downloaded!");}else{showSuccess("Sent!");}resetForm();}
+async function onSendOption(e) {
+  const act = e.target.dataset.action;
+  $("sendMenu").style.display = "none";
+  if (act === "download") {
+    await exportPDF();
+    showSuccess("Downloaded!");
+  } else {
+    showSuccess("Sent!");
+  }
+  resetForm();
+}
 
-async function exportPDF(){
+async function exportPDF() {
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({unit:'pt', format:'a4'});
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const margin = 40;
-  const usableWidth = pageWidth - margin*2;
+  const usableWidth = pageWidth - margin * 2;
+
   const html = buildPreviewHTML();
   const wrap = document.createElement("div");
   wrap.style.width = usableWidth + "px";
   wrap.innerHTML = html;
   document.body.appendChild(wrap);
-  const canvas = await html2canvas(wrap,{scale:2,useCORS:true,backgroundColor:"#ffffff"});
+
+  const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
   const img = canvas.toDataURL("image/png");
   const pdfHeight = (canvas.height * usableWidth) / canvas.width;
   pdf.addImage(img, "PNG", margin, margin, usableWidth, pdfHeight);
@@ -292,13 +368,37 @@ async function exportPDF(){
   document.body.removeChild(wrap);
 }
 
-function showSuccess(msg){$("successText").textContent=msg;$("success").style.display="flex";setTimeout(()=>{$("success").style.display="none";},1500);}
-function resetForm(){document.querySelectorAll("input,textarea").forEach(i=>i.value="");$("itemsBody").innerHTML="";addItem();addItem();$("poNumber").value=nextPONumber();subTotal.textContent="₦0.00";grandTotal.textContent="₦0.00";$("overlay").style.display="none";}
+function showSuccess(msg) {
+  $("successText").textContent = msg;
+  $("success").style.display = "flex";
+  setTimeout(() => { $("success").style.display = "none"; }, 1500);
+}
 
-function bind(){$("addRow").addEventListener("click",addItem);$("previewBtn").addEventListener("click",openPreview);$("backBtn").addEventListener("click",()=>$("overlay").style.display="none");$("sendBtn").addEventListener("click",()=>$("sendMenu").style.display="flex");document.querySelectorAll(".send-menu div").forEach(d=>d.addEventListener("click",onSendOption));[$("taxInput"),$("shipInput"),$("otherInput"),$("currency")].forEach(el=>el.addEventListener("input",recalc));}
+function resetForm() {
+  document.querySelectorAll("input,textarea").forEach(i => i.value = "");
+  $("itemsBody").innerHTML = "";
+  addItem();
+  addItem();
+  $("poNumber").value = nextPONumber();
+  subTotal.textContent = "₦0.00";
+  grandTotal.textContent = "₦0.00";
+  $("overlay").style.display = "none";
+}
+
+function bind() {
+  $("addRow").addEventListener("click", addItem);
+  $("previewBtn").addEventListener("click", openPreview);
+  $("backBtn").addEventListener("click", () => $("overlay").style.display = "none");
+  $("sendBtn").addEventListener("click", () => $("sendMenu").style.display = "flex");
+  document.querySelectorAll(".send-menu div").forEach(d => d.addEventListener("click", onSendOption));
+  [$("taxInput"), $("shipInput"), $("otherInput"), $("currency")].forEach(el =>
+    el.addEventListener("input", recalc)
+  );
+}
 
 init();
 </script>
 
 </body>
+
 </html>
